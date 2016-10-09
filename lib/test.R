@@ -55,7 +55,7 @@ ui <- dashboardPage(
                               ),
                      menuItem("Nearby Facilities",tabName="facilitiestab",icon=icon("dashboard"),
                               menuSubItem(icon=NULL, tabName="facilitiestab", 
-                                          selectInput("facility","Facility",c('Gas Station','Garage'))),
+                                          selectInput("facility","Facility",c('Gas Station','Restroom'))),
                               menuSubItem(tabName="facilitiestab", actionButton("submit2", "Find Facilities", icon("paper-plane"),
                                                                        style="color: #fff; background-color: #337ab7; border-color: #2e6da4"))
                               )
@@ -67,7 +67,7 @@ ui <- dashboardPage(
               tabItems(tabItem(tabName = "parktab",
                        h2(leafletOutput("parkingmap"),"top spots: ")),
                        tabItem(tabName = "facilitiestab",
-                       h2("..."))         
+                       h2(leafletOutput("facilitymap")))         
                )
   )
 )
@@ -78,6 +78,10 @@ server <- function(input, output, session) {
   #reactive data
   
   output$parkingmap <- renderLeaflet({
+    leaflet() %>% setView(lng = -73.9712, lat = 40.7831, zoom = 14) %>% addTiles() %>% addProviderTiles("CartoDB.Positron")
+  })
+
+  output$facilitymap <- renderLeaflet({
     leaflet() %>% setView(lng = -73.9712, lat = 40.7831, zoom = 14) %>% addTiles() %>% addProviderTiles("CartoDB.Positron")
   })
   
@@ -91,7 +95,6 @@ server <- function(input, output, session) {
                  weight=1, radius=50, color='black', fillColor='orange',
                  popup=address, fillOpacity=0.5, opacity=1)
   })
-  
   
   output$pricerange <- renderUI({
     if(input$price=="Free")
@@ -120,6 +123,28 @@ server <- function(input, output, session) {
     dropdownMenu(type = "notifications", badgeStatus = NULL, icon=icon("history"), .list=his)
   })
 
+  observeEvent(input$facilitymap_click, {
+    click2<-input$facilitymap_click
+    clat2 <- click2$lat
+    clng2 <- click2$lng
+    address2 <- revgeocode(c(clng2,clat2))
+    leafletProxy('facilitymap') %>% clearShapes()  %>%
+      addCircles(lng=clng2, lat=clat2, group='circles',
+                 weight=1, radius=50, color='black', fillColor='green',
+                 popup=address2, fillOpacity=0.5, opacity=1)
+  })
+  
+  observeEvent(input$submit2, {
+    if(is.null(address2))
+      return()
+    if(input$facility == "Gas Station")
+      facilitydata <- read.csv("../data/Gas Station in Manhattan.csv")
+      #clat2 clng2
+      
+    #else if(input$facility == "Restroom")
+    #  facilitydata <- read.csv("")
+  })
+  
 }
 
 shinyApp(ui, server)
