@@ -215,14 +215,13 @@ server <- function(input, output, session) {
         }
       if(nrow(facilitydata_filtered)!=0) {
         facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
-        values$facilitytable <- facilitydata_filtered #
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=restroomLeafIcon,
-                   popup = paste(values$facilitytable[,'Name'], # 
-                                 values$facilitytable[,'Address'], sep=": ")) #
+                   popup = paste(facilitydata_filtered$Name,  
+                                 facilitydata_filtered$Address, sep=": ")) 
         }
       }
-    #values$facilitytable <- facilitydata_filtered
+    values$facilitytable <- facilitydata_filtered
   })
   
   ### Other necessary functions
