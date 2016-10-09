@@ -137,12 +137,29 @@ server <- function(input, output, session) {
   observeEvent(input$submit2, {
     if(is.null(address2))
       return()
-    if(input$facility == "Gas Station")
+    facilitychosen <- input$facility
+  })
+  
+  distance_calculation <- function (lat1, lon1, lat2, lon2) {
+    radlat1 = pi * lat1/180
+    radlat2 = pi * lat2/180
+    theta = lon1-lon2
+    radtheta = pi * theta/180
+    dist = sin(radlat1) * sin(radlat2) + cos(radlat1) * cos(radlat2) * cos(radtheta);
+    dist = acos(dist)
+    dist = dist * 180/pi
+    dist = dist * 60 * 1.1515
+    dist = dist * 0.8684
+    return(dist)
+  }
+  
+  facilitydata <- reactive({
+    if(is.null(facilitychosen))
+      return()
+    if(facilitychosen == "Gas Station")
       facilitydata <- read.csv("../data/Gas Station in Manhattan.csv")
-      #clat2 clng2
-      
-    #else if(input$facility == "Restroom")
-    #  facilitydata <- read.csv("")
+      facilitydata <- facilitydata[]
+      kj
   })
   
 }
