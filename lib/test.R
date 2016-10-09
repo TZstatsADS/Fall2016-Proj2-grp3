@@ -157,9 +157,11 @@ server <- function(input, output, session) {
     if(is.null(facilitychosen))
       return()
     if(facilitychosen == "Gas Station")
-      facilitydata <- read.csv("../data/Gas Station in Manhattan.csv")
-      facilitydata <- facilitydata[]
-      kj
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
+      for (i in 1:nrow(facilitydata))
+        if (function(facilitydata[i,3], facilitydata[i,4], clat2, clng2)<=10)
+          
+
   })
   
 }
