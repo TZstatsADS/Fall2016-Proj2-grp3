@@ -107,7 +107,7 @@ server <- function(input, output, session) {
     address2 <- revgeocode(c(clng2,clat2))
     leafletProxy('facilitymap') %>% clearShapes()  %>%
       addCircles(lng=clng2, lat=clat2, group='circles',
-                 weight=1, radius=50, color='black', fillColor='green',
+                 weight=1, radius=50, color='black', fillColor='green', 
                  popup=address2, fillOpacity=0.5, opacity=1)
   })
   
@@ -159,7 +159,33 @@ server <- function(input, output, session) {
   
   ### Define reactive tables
   values <- reactiveValues(facilitytable = NULL)
-  output$outputtable2 <- DT::renderDataTable(values$facilitytable[,c(1,2,5)], rownames=FALSE)
+  output$outputtable2 <- DT::renderDataTable(values$facilitytable[,c(1,2,5)], 
+                                             rownames=FALSE)
+  
+  ### Highlight marker when 1) mouseover 2) corresponding row in table selected
+  observe({
+    leafletProxy("facilitymap") %>% clearGroup("overlays")
+    event <- input$facilitymap_marker_mouseover
+    if (is.null(event))
+      return()
+    isolate({
+      leafletProxy("facilitymap") %>% addCircles(lng=event$lng,lat=event$lat-0.0007, radius=70, layerId = event$id,
+                                                 fillColor="red", color="red", group="overlays")
+    })
+  })
+  
+  observe({
+    event <- input$outputtable2_rows_selected
+    if (is.null(event))
+      return()
+    flon <- values$facilitytable[input$outputtable2_rows_selected,4]
+    flat <- values$facilitytable[input$outputtable2_rows_selected,3]
+    leafletProxy("facilitymap") %>% clearGroup("overlays")
+    isolate({
+      leafletProxy("facilitymap") %>% addCircles(lng=flon,lat=flat-0.0007, radius=70,
+                                                 fillColor="red", color="red", group="overlays")
+    })
+  })
   
   ### Add markers on Facility map
   observeEvent(input$submit2, {
@@ -170,7 +196,7 @@ server <- function(input, output, session) {
     clat2 <- click2$lat
     clng2 <- click2$lng
     leafletProxy('facilitymap') %>% clearMarkers()
-    if(nrow(facilitydata_filtered)>0) {
+    if(exists('facilitydata_filtered')) {
       facilitydata_filtered <- facilitydata_filtered[0,]}
     if(facilitychosen == "Gas Station") {
       facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
@@ -184,9 +210,11 @@ server <- function(input, output, session) {
       }
       if(nrow(facilitydata_filtered)!=0) {
         facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
+        rownames(facilitydata_filtered) <- 1:nrow(facilitydata_filtered)
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=gasstationLeafIcon,
-                   popup = paste(facilitydata_filtered$Brand, facilitydata_filtered$Address, sep=": "))}}
+                   popup = paste(facilitydata_filtered$Name, facilitydata_filtered$Address, sep=": "),
+                   layerId = ~ Address)}}
     if(facilitychosen == "Garage") {
       facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/garage_location.csv")
       facilitydata_filtered <- facilitydata[0,]
@@ -199,10 +227,12 @@ server <- function(input, output, session) {
       }
       if(nrow(facilitydata_filtered)!=0) {
         facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
+        rownames(facilitydata_filtered) <- 1:nrow(facilitydata_filtered)
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=garageLeafIcon,
-                   popup = paste(facilitydata_filtered$Facility.Name, 
-                                 facilitydata_filtered$Facility.Street, sep=": "))}}
+                   popup = paste(facilitydata_filtered$Name, 
+                                 facilitydata_filtered$Address, sep=": "),
+                   layerId = ~ Address)}}
     if(facilitychosen == "Restroom") {
       facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/publictoilet(name,address,laditude, longditude).csv")
       facilitydata_filtered <- facilitydata[0,]
@@ -215,10 +245,12 @@ server <- function(input, output, session) {
         }
       if(nrow(facilitydata_filtered)!=0) {
         facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
+        rownames(facilitydata_filtered) <- 1:nrow(facilitydata_filtered)
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=restroomLeafIcon,
                    popup = paste(facilitydata_filtered$Name,  
-                                 facilitydata_filtered$Address, sep=": ")) 
+                                 facilitydata_filtered$Address, sep=": "),
+                   layerId = ~ Address) 
         }
       }
     values$facilitytable <- facilitydata_filtered
