@@ -1,5 +1,6 @@
 library(shiny)
 library(shinydashboard)
+library(DT)
 library(leaflet)
 library(shinyjs)
 library(ggmap)
@@ -67,9 +68,9 @@ ui <- dashboardPage(
   
   dashboardBody(
               tabItems(tabItem(tabName = "parktab",
-                       h2(leafletOutput("parkingmap"),"top spots: ")),
+                       h2(leafletOutput("parkingmap"))),
                        tabItem(tabName = "facilitiestab",
-                       h2(leafletOutput("facilitymap"),tableOutput("df_data_out"))
+                       h2(leafletOutput("facilitymap"),div(DT::dataTableOutput("outputtable2"), style = "font-size:50%"))
                        )         
                )
   )
@@ -108,8 +109,6 @@ server <- function(input, output, session) {
       addCircles(lng=clng2, lat=clat2, group='circles',
                  weight=1, radius=50, color='black', fillColor='green',
                  popup=address2, fillOpacity=0.5, opacity=1)
-    if(exists('facilitydata_filtered'))
-      facilitydata_filtered <- facilitydata_filtered[0,]
   })
   
   ### UI: provide price range input if user chooses "paid"
@@ -159,17 +158,8 @@ server <- function(input, output, session) {
   )
   
   ### Define reactive tables
-  #facilitydata_filtered <- reactiveValues()
-  
-  #output$facilitytable <- renderTable({
-  #  if(nrow(facilitydata_filtered)>0)
-  #    facilitydata_filtered
-  #  else
-  #  facilitydata_filtered
-  #})
-  
   values <- reactiveValues(facilitytable = NULL)
-  output$df_data_out <- renderTable(values$facilitytable)
+  output$outputtable2 <- DT::renderDataTable(values$facilitytable[,c(1,2,5)], rownames=FALSE)
   
   ### Add markers on Facility map
   observeEvent(input$submit2, {
@@ -185,26 +175,54 @@ server <- function(input, output, session) {
     if(facilitychosen == "Gas Station") {
       facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
       facilitydata_filtered <- facilitydata[0,]
-      for (i in 1:nrow(facilitydata))
-        if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2) <= input$distance2)
+      for (i in 1:nrow(facilitydata)) {
+        temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
+        if(temp_distance <= input$distance2){
           facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(4)] <- facilitydata[i,]
-      if(nrow(facilitydata_filtered)!=0)
+          facilitydata_filtered[nrow(facilitydata_filtered), 'Distance'] <- temp_distance
+        }
+      }
+      if(nrow(facilitydata_filtered)!=0) {
+        facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=gasstationLeafIcon,
-                   popup = paste(facilitydata_filtered$Brand, facilitydata_filtered$Address, sep=": "))}
+                   popup = paste(facilitydata_filtered$Brand, facilitydata_filtered$Address, sep=": "))}}
     if(facilitychosen == "Garage") {
       facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/garage_location.csv")
       facilitydata_filtered <- facilitydata[0,]
-      for (i in 1:nrow(facilitydata))
-        if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2) <= input$distance2)
+      for (i in 1:nrow(facilitydata)) {
+        temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
+        if(temp_distance <= input$distance2){
           facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(4)] <- facilitydata[i,]
-      if(nrow(facilitydata_filtered)!=0)
+          facilitydata_filtered[nrow(facilitydata_filtered), 'Distance'] <- temp_distance
+        }
+      }
+      if(nrow(facilitydata_filtered)!=0) {
+        facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=garageLeafIcon,
                    popup = paste(facilitydata_filtered$Facility.Name, 
-                                 facilitydata_filtered$Facility.Street, sep=": "))}
-    values$facilitytable <- facilitydata_filtered
-    #if(facilitychosen == "Restroom") {}
+                                 facilitydata_filtered$Facility.Street, sep=": "))}}
+    if(facilitychosen == "Restroom") {
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/publictoilet(name,address,laditude, longditude).csv")
+      facilitydata_filtered <- facilitydata[0,]
+      for (i in 1:nrow(facilitydata)) {
+        temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
+        if(temp_distance <= input$distance2){
+          facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(4)] <- facilitydata[i,]
+          facilitydata_filtered[nrow(facilitydata_filtered), 'Distance'] <- temp_distance
+          }
+        }
+      if(nrow(facilitydata_filtered)!=0) {
+        facilitydata_filtered <- facilitydata_filtered[order(facilitydata_filtered$Distance),]
+        values$facilitytable <- facilitydata_filtered #
+        leafletProxy('facilitymap') %>%
+        addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=restroomLeafIcon,
+                   popup = paste(values$facilitytable[,'Name'], # 
+                                 values$facilitytable[,'Address'], sep=": ")) #
+        }
+      }
+    #values$facilitytable <- facilitydata_filtered
   })
   
   ### Other necessary functions
