@@ -75,8 +75,7 @@ ui <- dashboardPage(
 
 
 server <- function(input, output, session) {
-  #reactive data
-  
+  ### UI: define two maps ###
   output$parkingmap <- renderLeaflet({
     leaflet() %>% setView(lng = -73.9712, lat = 40.7831, zoom = 14) %>% addTiles() %>% addProviderTiles("CartoDB.Positron")
   })
@@ -85,6 +84,7 @@ server <- function(input, output, session) {
     leaflet() %>% setView(lng = -73.9712, lat = 40.7831, zoom = 14) %>% addTiles() %>% addProviderTiles("CartoDB.Positron")
   })
   
+  ### Add current location on maps ###
   observeEvent(input$parkingmap_click, {
     click<-input$parkingmap_click
     clat <- click$lat
@@ -96,33 +96,6 @@ server <- function(input, output, session) {
                  popup=address, fillOpacity=0.5, opacity=1)
   })
   
-  output$pricerange <- renderUI({
-    if(input$price=="Free")
-      return()
-    sliderInput("pricerange", label="willing to pay ($/hr):", min=0, max=50, value=c(0,50), step = 0.1)
-  })
-
-  output$hourrange <- renderUI({
-    sliderInput("hourrange", label = "Hour range",
-                min = as.POSIXct(paste(input$daterange[1], " 00:00:00")),
-                max = as.POSIXct(paste(input$daterange[2]," 23:59:59")),
-                value = c(
-                  as.POSIXct(paste(input$daterange[1], " 00:00:00")),
-                  as.POSIXct(paste(input$daterange[2]," 23:59:59"))
-                ))
-  })
-  
-  output$notificationMenu <- renderMenu({
-    ###
-    record <- c("Record 1", "Record 2", "Record 3", "Record 4", "Record 5")
-    historicalData <- data.frame(record)
-    his <- apply(historicalData, 1, function(row) {
-      notificationItem(text = row[["record"]], icon=icon("clock-o"))
-    })
-    
-    dropdownMenu(type = "notifications", badgeStatus = NULL, icon=icon("history"), .list=his)
-  })
-
   observeEvent(input$facilitymap_click, {
     click2<-input$facilitymap_click
     clat2 <- click2$lat
@@ -134,12 +107,65 @@ server <- function(input, output, session) {
                  popup=address2, fillOpacity=0.5, opacity=1)
   })
   
-  observeEvent(input$submit2, {
-    if(is.null(address2))
+  ### UI: provide price range input if user chooses "paid"
+  output$pricerange <- renderUI({
+    if(input$price=="Free")
       return()
-    facilitychosen <- input$facility
+    sliderInput("pricerange", label="willing to pay ($/hr):", min=0, max=50, value=c(0,50), step = 0.1)
   })
   
+  ### UI: provide hour range based on date input
+  output$hourrange <- renderUI({
+    sliderInput("hourrange", label = "Hour range",
+                min = as.POSIXct(paste(input$daterange[1], " 00:00:00")),
+                max = as.POSIXct(paste(input$daterange[2]," 23:59:59")),
+                value = c(
+                  as.POSIXct(paste(input$daterange[1], " 00:00:00")),
+                  as.POSIXct(paste(input$daterange[2]," 23:59:59"))
+                ))
+  })
+  
+  ### Header drop-downs: search history & app ifo
+  output$notificationMenu <- renderMenu({
+    ### !!! fill in record
+    record <- c("Record 1", "Record 2", "Record 3", "Record 4", "Record 5")
+    historicalData <- data.frame(record)
+    his <- apply(historicalData, 1, function(row) {
+      notificationItem(text = row[["record"]], icon=icon("clock-o"))
+    })
+    
+    dropdownMenu(type = "notifications", badgeStatus = NULL, icon=icon("history"), .list=his)
+  })
+  
+  ### Customize marker icons
+  gasstationLeafIcon <- makeIcon(
+    iconUrl = "https://cdn3.iconfinder.com/data/icons/map/500/gasstation-512.png",
+    iconWidth = 15
+  )
+  
+  ### Add markers on Facility map
+  observeEvent(input$submit2, {
+    print("clicked")
+    if(is.null(input$facilitymap_click))
+      return()
+    facilitychosen <- input$facility
+    leafletProxy('facilitymap') %>% clearMarkers()
+    if(facilitychosen == "Gas Station")
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
+      facilitydata_filtered <- facilitydata[0,]
+      click2<-input$facilitymap_click
+      clat2 <- click2$lat
+      clng2 <- click2$lng
+      for (i in 1:nrow(facilitydata))
+        if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)<=3) # default 10 miles
+          facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(5)] <- facilitydata[i,]
+      if(nrow(facilitydata_filtered)!=0)
+        leafletProxy('facilitymap') %>%
+        addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=gasstationLeafIcon,
+                   popup = paste(facilitydata_filtered$Brand, facilitydata_filtered$Address, sep=": "))
+  })
+  
+  ### Other necessary functions
   distance_calculation <- function (lat1, lon1, lat2, lon2) {
     radlat1 = pi * lat1/180
     radlat2 = pi * lat2/180
@@ -152,17 +178,6 @@ server <- function(input, output, session) {
     dist = dist * 0.8684
     return(dist)
   }
-  
-  facilitydata <- reactive({
-    if(is.null(facilitychosen))
-      return()
-    if(facilitychosen == "Gas Station")
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
-      for (i in 1:nrow(facilitydata))
-        if (function(facilitydata[i,3], facilitydata[i,4], clat2, clng2)<=10)
-          
-
-  })
   
 }
 
