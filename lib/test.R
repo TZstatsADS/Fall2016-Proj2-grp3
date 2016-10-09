@@ -55,7 +55,9 @@ ui <- dashboardPage(
                               ),
                      menuItem("Nearby Facilities",tabName="facilitiestab",icon=icon("dashboard"),
                               menuSubItem(icon=NULL, tabName="facilitiestab", 
-                                          selectInput("facility","Facility",c('Gas Station','Restroom'))),
+                                          selectInput("facility","Facility",c('Gas Station', 'Garage', 'Restroom'))),
+                              menuSubItem(icon=NULL, tabName="facilitiestab", sliderInput("distance2","Max dist from your location (mi)",
+                                                                                          min = 1, max = 20, value = 1)),
                               menuSubItem(tabName="facilitiestab", actionButton("submit2", "Find Facilities", icon("paper-plane"),
                                                                        style="color: #fff; background-color: #337ab7; border-color: #2e6da4"))
                               )
@@ -67,7 +69,8 @@ ui <- dashboardPage(
               tabItems(tabItem(tabName = "parktab",
                        h2(leafletOutput("parkingmap"),"top spots: ")),
                        tabItem(tabName = "facilitiestab",
-                       h2(leafletOutput("facilitymap")))         
+                       h2(leafletOutput("facilitymap"),tableOutput('facilitytable'))
+                       )         
                )
   )
 )
@@ -105,6 +108,8 @@ server <- function(input, output, session) {
       addCircles(lng=clng2, lat=clat2, group='circles',
                  weight=1, radius=50, color='black', fillColor='green',
                  popup=address2, fillOpacity=0.5, opacity=1)
+    if(exists('facilitydata_filtered'))
+      facilitydata_filtered <- facilitydata_filtered[0,]
   })
   
   ### UI: provide price range input if user chooses "paid"
@@ -140,29 +145,57 @@ server <- function(input, output, session) {
   ### Customize marker icons
   gasstationLeafIcon <- makeIcon(
     iconUrl = "https://cdn3.iconfinder.com/data/icons/map/500/gasstation-512.png",
-    iconWidth = 15
+    iconWidth = 20
   )
+  
+  garageLeafIcon <- makeIcon(
+    iconUrl = "https://cdn4.iconfinder.com/data/icons/car-soft/512/car_transport_traffic_auto_transportation_vehicle_automobile_v2-512.png",
+    iconWidth = 25
+  )
+  
+  ### Define reactive tables
+  #facilitydata_filtered <- reactiveValues()
+  
+  #output$facilitytable <- renderTable({
+  #  if(nrow(facilitydata_filtered)>0)
+  #    facilitydata_filtered
+  #  else
+  #    as.data.frame(c(" "))
+  #})
   
   ### Add markers on Facility map
   observeEvent(input$submit2, {
-    print("clicked")
     if(is.null(input$facilitymap_click))
       return()
     facilitychosen <- input$facility
+    click2<-input$facilitymap_click
+    clat2 <- click2$lat
+    clng2 <- click2$lng
     leafletProxy('facilitymap') %>% clearMarkers()
-    if(facilitychosen == "Gas Station")
+    if(nrow(facilitydata_filtered)>0) {
+      facilitydata_filtered <- facilitydata_filtered[0,]}
+    if(facilitychosen == "Gas Station") {
       facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
       facilitydata_filtered <- facilitydata[0,]
-      click2<-input$facilitymap_click
-      clat2 <- click2$lat
-      clng2 <- click2$lng
       for (i in 1:nrow(facilitydata))
-        if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)<=3) # default 10 miles
+        if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2) <= input$distance2)
           facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(5)] <- facilitydata[i,]
       if(nrow(facilitydata_filtered)!=0)
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=gasstationLeafIcon,
-                   popup = paste(facilitydata_filtered$Brand, facilitydata_filtered$Address, sep=": "))
+                   popup = paste(facilitydata_filtered$Brand, facilitydata_filtered$Address, sep=": "))}
+    if(facilitychosen == "Garage") {
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/garage_location.csv")
+      facilitydata_filtered <- facilitydata[0,]
+      for (i in 1:nrow(facilitydata))
+        if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2) <= input$distance2)
+          facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(4)] <- facilitydata[i,]
+      if(nrow(facilitydata_filtered)!=0)
+        leafletProxy('facilitymap') %>%
+        addMarkers(data = facilitydata_filtered, lng = ~ longitude, lat = ~ latitude,  icon=garageLeafIcon,
+                   popup = paste(facilitydata_filtered$Facility.Name, 
+                                 facilitydata_filtered$Facility.Street, sep=": "))}
+    #if(facilitychosen == "Restroom")
   })
   
   ### Other necessary functions
