@@ -69,7 +69,7 @@ ui <- dashboardPage(
               tabItems(tabItem(tabName = "parktab",
                        h2(leafletOutput("parkingmap"),"top spots: ")),
                        tabItem(tabName = "facilitiestab",
-                       h2(leafletOutput("facilitymap"),tableOutput('facilitytable'))
+                       h2(leafletOutput("facilitymap"),tableOutput("df_data_out"))
                        )         
                )
   )
@@ -153,6 +153,11 @@ server <- function(input, output, session) {
     iconWidth = 25
   )
   
+  restroomLeafIcon <- makeIcon(
+    iconUrl = "https://cdn3.iconfinder.com/data/icons/map-markers-1/512/toilet-512.png",
+    iconWidth = 25
+  )
+  
   ### Define reactive tables
   #facilitydata_filtered <- reactiveValues()
   
@@ -160,8 +165,11 @@ server <- function(input, output, session) {
   #  if(nrow(facilitydata_filtered)>0)
   #    facilitydata_filtered
   #  else
-  #    as.data.frame(c(" "))
+  #  facilitydata_filtered
   #})
+  
+  values <- reactiveValues(facilitytable = NULL)
+  output$df_data_out <- renderTable(values$facilitytable)
   
   ### Add markers on Facility map
   observeEvent(input$submit2, {
@@ -179,7 +187,7 @@ server <- function(input, output, session) {
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata))
         if(distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2) <= input$distance2)
-          facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(5)] <- facilitydata[i,]
+          facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(4)] <- facilitydata[i,]
       if(nrow(facilitydata_filtered)!=0)
         leafletProxy('facilitymap') %>%
         addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=gasstationLeafIcon,
@@ -192,10 +200,11 @@ server <- function(input, output, session) {
           facilitydata_filtered[nrow(facilitydata_filtered)+1, seq(4)] <- facilitydata[i,]
       if(nrow(facilitydata_filtered)!=0)
         leafletProxy('facilitymap') %>%
-        addMarkers(data = facilitydata_filtered, lng = ~ longitude, lat = ~ latitude,  icon=garageLeafIcon,
+        addMarkers(data = facilitydata_filtered, lng = ~ Longitude, lat = ~ Latitude,  icon=garageLeafIcon,
                    popup = paste(facilitydata_filtered$Facility.Name, 
                                  facilitydata_filtered$Facility.Street, sep=": "))}
-    #if(facilitychosen == "Restroom")
+    values$facilitytable <- facilitydata_filtered
+    #if(facilitychosen == "Restroom") {}
   })
   
   ### Other necessary functions
