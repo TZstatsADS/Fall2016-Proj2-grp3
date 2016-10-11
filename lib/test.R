@@ -14,7 +14,7 @@ ui <- dashboardPage(
                                badgeStatus = NULL, icon=icon("wrench"),
                                messageItem(
                                  from = "Developers",
-                                 message = "Yaqing, Zichen, Kyongmook, Jennifer"
+                                 message = "Yaqing, Kyongmook, Zichen"
                                ),
                                messageItem(
                                  from = "Version",
