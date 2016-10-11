@@ -1,5 +1,14 @@
 # Project: NYC Open Data
 ### Data folder
 
-The data directory contains data used in the analysis. This is treated as read only; in paricular the R/python files are never allowed to write to the files in here. Depending on the project, these might be csv files, a database, and the directory itself may have subdirectories.
+The data directory contains data used in the analysis. The data has been processed for better file management purpose and some of the data cleaning and processing code can be found at folder /lib.
+
+For reference, the raw data can be found at:
+
+https://data.cityofnewyork.us/City-Government/Parking-Violations-Issued-Fiscal-Year-2017/pvqr-7yc4
+https://data.cityofnewyork.us/Transportation/Parking-Regulation-Locations-and-Signs/xswq-wnv9
+
+etc.
+
+
 
