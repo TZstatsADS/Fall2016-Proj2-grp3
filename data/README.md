@@ -1,7 +1,7 @@
 # Project: NYC Open Data
 ### Data folder
 
-The data directory contains data used in the analysis. The data has been processed for better file management purpose and some of the data cleaning and processing code can be found at folder /lib.
+The data directory contains data used in the analysis. The data has been previously processed for better file management purpose and some of the data cleaning and processing code can be found at folder /lib.
 
 For reference, the raw data can be found at:
 
