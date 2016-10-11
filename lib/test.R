@@ -40,7 +40,7 @@ ui <- dashboardPage(
                                menuSubItem(icon=NULL, tabName="parktab", uiOutput("pricerange")),
                                            
                                menuSubItem(icon=NULL, tabName="parktab", sliderInput("distance","Max dist from your location (mi)",
-                                                       min = 1, max = 20, value = 1)),
+                                                       min = 1, max = 5, step = 0.1, value = 1)),
                                            
                                menuSubItem(icon=NULL, tabName="parktab", dateRangeInput("daterange", "Date range:",
                                               start  = Sys.Date(),
@@ -131,8 +131,7 @@ server <- function(input, output, session) {
   
   ### Header drop-downs: search history & app ifo
   output$notificationMenu <- renderMenu({
-    ### !!! fill in record
-    record <- c("Record 1", "Record 2", "Record 3", "Record 4", "Record 5")
+    record <- values$searchhistory
     historicalData <- data.frame(record)
     his <- apply(historicalData, 1, function(row) {
       notificationItem(text = row[["record"]], icon=icon("clock-o"))
@@ -142,6 +141,21 @@ server <- function(input, output, session) {
   })
   
   ### Customize marker icons
+  greenparkingLeafIcon <- makeIcon(
+    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_green.png",
+    iconWidth = 20
+  )
+  
+  redparkingLeafIcon <- makeIcon(
+    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_red.png",
+    iconWidth = 20
+  )
+  
+  yellowparkingLeafIcon <- makeIcon(
+    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_yellow.png",
+    iconWidth = 20
+  )
+  
   gasstationLeafIcon <- makeIcon(
     iconUrl = "https://cdn3.iconfinder.com/data/icons/map/500/gasstation-512.png",
     iconWidth = 20
@@ -158,7 +172,7 @@ server <- function(input, output, session) {
   )
   
   ### Define reactive tables
-  values <- reactiveValues(facilitytable = NULL)
+  values <- reactiveValues(facilitytable = NULL, searchhistory = c("No search history"))
   output$outputtable2 <- DT::renderDataTable(values$facilitytable[,c(1,2,5)], 
                                              rownames=FALSE)
   
@@ -187,6 +201,60 @@ server <- function(input, output, session) {
     })
   })
   
+  ### Add markers on Parking map
+  observeEvent(input$submit, {
+    if(is.null(input$parkingmap_click))
+      return()
+    click1 <- input$parkingmap_click
+    clat1 <- click1$lat
+    clng1 <- click1$lng
+    maxdist <- input$distance
+    starttime <- input$hourrange[1]
+    endtime <- input$hourrange[2]
+    leafletProxy('parkingmap') %>% clearMarkers()
+    parkingviolation <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/parking_violation.csv")
+    crimerate <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Crime_Rate/Felony.csv")
+    if(input$price == 'Free'){
+      parkingspots <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Free_Parking_Spots/Sample_new.csv")
+      startday <- weekdays(starttime)
+      startday <- as.integer(factor(startday, levels = c("Monday", "Tuesday", "Wednesday", 
+                                              "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
+      endday <- weekdays(endtime)
+      endday <- as.integer(factor(endday, levels = c("Monday", "Tuesday", "Wednesday", 
+                                                         "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
+      
+      duration <- endtime - starttime
+      parkingspots <- parkingspots[parkingspots$MaxDuration >= duration, ]
+      
+      parkingspots <- parkingspots[parkingspots$Lat - clat1 <= 1]
+      parkingspots <- parkingspots[parkingspots$Lon - clng1 <= 1]
+      
+      parkingspots_temp <- parkingspots[0,]
+      for (i in 1:nrow(parkingspots)){
+        if(parkingspots[i,'WE'] >= parkingspots[i,'WS']){
+          dayrangeorder <- c(parkingspots[i,'WS']:parkingspots[i,'WE'])
+        } else{
+          dayrangeorder <- c(parkingspots[i,'WS']:7, 1:parkingspots[i,'WE'])
+        }
+        flag <- TRUE
+        if(match(startday,dayrangeorder) <= match(endday,dayrangeorder)){
+          if(startday == dayrangeorder[1] & starttime < parkingspots[i,'TS'])
+            flag <- FALSE
+          if(endday == dayrangeorder[length(dayrangeorder)] & endtime > parkingspots[i, 'TE']) 
+            flag <- FALSE
+          if(flag == TRUE)
+            parkingspots_temp[nrow(parkingspots_temp)+1, seq(8)] <- parkingspots[i,]
+          }
+        }
+      parkingspots  <- parkingspots_temp
+    }
+    else if(input$price == 'Paid'){
+      maxprice <- input$pricerange
+      
+    }
+  })
+  
+  
   ### Add markers on Facility map
   observeEvent(input$submit2, {
     if(is.null(input$facilitymap_click))
@@ -199,7 +267,7 @@ server <- function(input, output, session) {
     if(exists('facilitydata_filtered')) {
       facilitydata_filtered <- facilitydata_filtered[0,]}
     if(facilitychosen == "Gas Station") {
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Gas Station in Manhattan.csv")
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Facilities/Gas Station in Manhattan.csv")
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata)) {
         temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
@@ -216,7 +284,7 @@ server <- function(input, output, session) {
                    popup = paste(facilitydata_filtered$Name, facilitydata_filtered$Address, sep=": "),
                    layerId = ~ Address)}}
     if(facilitychosen == "Garage") {
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/garage_location.csv")
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Facilities/garage_location.csv")
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata)) {
         temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
@@ -234,7 +302,7 @@ server <- function(input, output, session) {
                                  facilitydata_filtered$Address, sep=": "),
                    layerId = ~ Address)}}
     if(facilitychosen == "Restroom") {
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/publictoilet(name,address,laditude, longditude).csv")
+      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Facilities/publictoilet(name,address,laditude, longditude).csv")
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata)) {
         temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
