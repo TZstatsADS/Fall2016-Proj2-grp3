@@ -10,7 +10,7 @@ Term: Fall 2016
 	+ Kyongmook Lim
 	+ Zichen Zhu
 	
-+ Project summary: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
++ Project summary: The project aims to make car parking in NY easier. Our main function reads user's input such as the current location and the maximum distance s/he would love to drive to, ask if s/he prefers free or paid parking, get the user's willingness to pay and the time range of his/her parking demand, and then make visualized recommendations based on neighboorhood crime rate and parking violation rate. To implement this feature, we spent a lot of time converting road signs such as "No Parking Monday 7am to 11am" to free parking lot spots. We also provide features to allow users find out nearby gas stations/garage for car fixing/restrooms.
 
 In this second project of Applied Data Science, we will carry out *Exploratory Data Analysis and Visualization* via a shiny app on a topic about open data released from the [New York City open data portal](https://nycopendata.socrata.com/). See [Project 2 Description](doc/project2_desc.md) for more details.  
 
