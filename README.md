@@ -2,6 +2,7 @@
 ### [Project Description](doc/project2_desc.md)
 
 ### [Our App](https://yaqing-xie.shinyapps.io/fall2016-proj2-grp3/)
+(Note: the online version runs significantly slower than the local version and some of the functions look abnormal. Please refer to doc/screenshots.)
 
 Term: Fall 2016
 
