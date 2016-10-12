@@ -31,10 +31,10 @@ The **learning goals** for this project is
 - Shiny Server: Yaqing
 
 **Contribution statement - Kyongmook's version**: ([default](doc/a_note_on_contributions.md)) 
-- Data Collection: 
-- Data Cleaning/Processing: 
-- Shiny UI: 
-- Shiny Server: 
+- Data Collection: Kyongmook(90%), Yaqing (10%)
+- Data Cleaning/Processing: Kyongmook (80%), Zichen(10%), Yaqing (10%)
+- Shiny UI: Yaqing
+- Shiny Server: Yaqing
 
 **Contribution statement - John's version**: ([default](doc/a_note_on_contributions.md)) 
 - Data Collection: Kyongmook(80%), Zichen(10%), Yaqing (10%)
