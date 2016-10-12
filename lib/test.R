@@ -9,7 +9,6 @@ ui <- dashboardPage(
   skin='yellow',
   dashboardHeader(title = "Parking Aide",
                   titleWidth = 300,
-                  dropdownMenuOutput("notificationMenu"),
                   dropdownMenu(type = "messages",
                                badgeStatus = NULL, icon=icon("wrench"),
                                messageItem(
@@ -40,7 +39,7 @@ ui <- dashboardPage(
                                menuSubItem(icon=NULL, tabName="parktab", uiOutput("pricerange")),
                                            
                                menuSubItem(icon=NULL, tabName="parktab", sliderInput("distance","Max dist from your location (mi)",
-                                                       min = 1, max = 5, step = 0.1, value = 1)),
+                                                       min = 0, max = 5, step = 0.1, value = 1)),
                                            
                                menuSubItem(icon=NULL, tabName="parktab", dateRangeInput("daterange", "Date range:",
                                               start  = Sys.Date(),
@@ -68,7 +67,7 @@ ui <- dashboardPage(
   
   dashboardBody(
               tabItems(tabItem(tabName = "parktab",
-                       h2(leafletOutput("parkingmap"))),
+                       h2(leafletOutput("parkingmap"),div(DT::dataTableOutput("outputtable"), style = "font-size:50%"))),
                        tabItem(tabName = "facilitiestab",
                        h2(leafletOutput("facilitymap"),div(DT::dataTableOutput("outputtable2"), style = "font-size:50%"))
                        )         
@@ -128,37 +127,27 @@ server <- function(input, output, session) {
                   as.POSIXct(paste(input$daterange[2]," 23:59:59"))
                 ))
   })
-  
-  ### Header drop-downs: search history & app ifo
-  output$notificationMenu <- renderMenu({
-    record <- values$searchhistory
-    historicalData <- data.frame(record)
-    his <- apply(historicalData, 1, function(row) {
-      notificationItem(text = row[["record"]], icon=icon("clock-o"))
-    })
-    
-    dropdownMenu(type = "notifications", badgeStatus = NULL, icon=icon("history"), .list=his)
-  })
+
   
   ### Customize marker icons
   greenparkingLeafIcon <- makeIcon(
     iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_green.png",
-    iconWidth = 20
+    iconWidth = 30
   )
   
   redparkingLeafIcon <- makeIcon(
     iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_red.png",
-    iconWidth = 20
+    iconWidth = 30
   )
   
   yellowparkingLeafIcon <- makeIcon(
     iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_yellow.png",
-    iconWidth = 20
+    iconWidth = 30
   )
   
   gasstationLeafIcon <- makeIcon(
     iconUrl = "https://cdn3.iconfinder.com/data/icons/map/500/gasstation-512.png",
-    iconWidth = 20
+    iconWidth = 25
   )
   
   garageLeafIcon <- makeIcon(
@@ -172,34 +161,13 @@ server <- function(input, output, session) {
   )
   
   ### Define reactive tables
-  values <- reactiveValues(facilitytable = NULL, searchhistory = c("No search history"))
+  values <- reactiveValues(facilitytable = NULL, parkingtable = NULL)
   output$outputtable2 <- DT::renderDataTable(values$facilitytable[,c(1,2,5)], 
                                              rownames=FALSE)
+  output$outputtable <- DT::renderDataTable(values$parkingtable[,c(1,4:10)], 
+                                            rownames=FALSE)
   
-  ### Highlight marker when 1) mouseover 2) corresponding row in table selected
-  observe({
-    leafletProxy("facilitymap") %>% clearGroup("overlays")
-    event <- input$facilitymap_marker_mouseover
-    if (is.null(event))
-      return()
-    isolate({
-      leafletProxy("facilitymap") %>% addCircles(lng=event$lng,lat=event$lat-0.0007, radius=70, layerId = event$id,
-                                                 fillColor="red", color="red", group="overlays")
-    })
-  })
   
-  observe({
-    event <- input$outputtable2_rows_selected
-    if (is.null(event))
-      return()
-    flon <- values$facilitytable[input$outputtable2_rows_selected,4]
-    flat <- values$facilitytable[input$outputtable2_rows_selected,3]
-    leafletProxy("facilitymap") %>% clearGroup("overlays")
-    isolate({
-      leafletProxy("facilitymap") %>% addCircles(lng=flon,lat=flat-0.0007, radius=70,
-                                                 fillColor="red", color="red", group="overlays")
-    })
-  })
   
   ### Add markers on Parking map
   observeEvent(input$submit, {
@@ -223,30 +191,68 @@ server <- function(input, output, session) {
       endday <- as.integer(factor(endday, levels = c("Monday", "Tuesday", "Wednesday", 
                                                          "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
       
-      duration <- endtime - starttime
-      parkingspots <- parkingspots[parkingspots$MaxDuration >= duration, ]
+      duration <- difftime(endtime, starttime, units="hours")
+      parkingspots <- parkingspots[parkingspots$Duration >= duration, ]
       
-      parkingspots <- parkingspots[parkingspots$Lat - clat1 <= 1]
-      parkingspots <- parkingspots[parkingspots$Lon - clng1 <= 1]
+      parkingspots <- parkingspots[abs(parkingspots$Lat - clat1) <= 1, ]
+      parkingspots <- parkingspots[abs(parkingspots$Lon - clng1) <= 1, ]
       
-      parkingspots_temp <- parkingspots[0,]
-      for (i in 1:nrow(parkingspots)){
-        if(parkingspots[i,'WE'] >= parkingspots[i,'WS']){
-          dayrangeorder <- c(parkingspots[i,'WS']:parkingspots[i,'WE'])
-        } else{
-          dayrangeorder <- c(parkingspots[i,'WS']:7, 1:parkingspots[i,'WE'])
-        }
-        flag <- TRUE
-        if(match(startday,dayrangeorder) <= match(endday,dayrangeorder)){
-          if(startday == dayrangeorder[1] & starttime < parkingspots[i,'TS'])
-            flag <- FALSE
-          if(endday == dayrangeorder[length(dayrangeorder)] & endtime > parkingspots[i, 'TE']) 
-            flag <- FALSE
-          if(flag == TRUE)
-            parkingspots_temp[nrow(parkingspots_temp)+1, seq(8)] <- parkingspots[i,]
+      if(nrow(parkingspots) > 0){
+        rownames(parkingspots) <- 1:nrow(parkingspots)
+        parkingspots_temp <- parkingspots[0,]
+        for (i in 1:nrow(parkingspots)){
+          if(parkingspots[i,'WE'] >= parkingspots[i,'WS']){
+            dayrangeorder <- c(parkingspots[i,'WS']:parkingspots[i,'WE'])
+          } else{
+            dayrangeorder <- c(parkingspots[i,'WS']:7, 1:parkingspots[i,'WE'])
+          }
+          flag <- FALSE
+          if((startday %in% dayrangeorder) & (endday %in% dayrangeorder)) {
+            if(match(startday,dayrangeorder) <= match(endday,dayrangeorder)){
+              flag <- TRUE
+              if(startday == dayrangeorder[1] & starttime < parkingspots[i,'TS']){
+                flag <- FALSE}
+              if(endday == dayrangeorder[length(dayrangeorder)] & endtime > parkingspots[i, 'TE']) {
+                flag <- FALSE}
+              }
+          }
+          if(flag){
+            temp_distance <- distance_calculation(parkingspots[i,"Lat"], parkingspots[i,"Lon"], clat1, clng1)
+            if(temp_distance <= maxdist){
+              parkingspots_temp[nrow(parkingspots_temp)+1, seq(8)] <- parkingspots[i,]
+              unsafeindex <- nrow(parkingviolation[abs(parkingviolation$Lon - parkingspots[i,"Lon"]) <= 0.3 & 
+                                                     abs(parkingviolation$Lat - parkingspots[i, "Lat"]) <= 0.3, ]) +
+                nrow(crimerate[abs(crime$Longitude - parkingspots[i,"Lon"]) <= 0.3 & 
+                                        abs(crime$Latitude - parkingspots[i,"Lat"]) <= 0.15, ])
+              parkingspots_temp[nrow(parkingspots_temp), "Unsafe"] <- unsafeindex
+              parkingspots_temp[nrow(parkingspots_temp), "Distance"] <- temp_distance
+            }
           }
         }
-      parkingspots  <- parkingspots_temp
+        parkingspots  <- parkingspots_temp
+      } else 
+        return()
+      
+      if(nrow(parkingspots) > 0) {
+        parkingspots <- parkingspots[order(parkingspots$Distance, parkingspots$Unsafe),]
+        leafletProxy('parkingmap') %>%
+        addMarkers(data = parkingspots[parkingspots$Unsafe <= 400, ], 
+                   lng = ~ Lon, lat = ~ Lat,  icon=greenparkingLeafIcon,
+                   popup = paste(parkingspots$ID, 
+                                 parkingspots$Unsafe, sep=", dangerous index: "),
+                   layerId = ~ ID) %>%
+        addMarkers(data = parkingspots[(parkingspots$Unsafe <= 800) & (parkingspots$Unsafe > 400), ], 
+                   lng = ~ Lon, lat = ~ Lat,  icon=yellowparkingLeafIcon,
+                   popup = paste(parkingspots$ID, 
+                                 parkingspots$Unsafe, sep=", dangerous index: "),
+                   layerId = ~ ID) %>%
+        addMarkers(data = parkingspots[parkingspots$Unsafe > 800, ], 
+                   lng = ~ Lon, lat = ~ Lat,  icon=redparkingLeafIcon,
+                   popup = paste(parkingspots$ID, 
+                                 parkingspots$Unsafe, sep=", dangerous index: "),
+                   layerId = ~ ID) }
+              
+      values$parkingtable <- parkingspots
     }
     else if(input$price == 'Paid'){
       maxprice <- input$pricerange
@@ -322,6 +328,55 @@ server <- function(input, output, session) {
         }
       }
     values$facilitytable <- facilitydata_filtered
+  })
+  
+  ### Highlight marker when 1) mouseover 2) corresponding row in table selected
+  observe({
+    leafletProxy("facilitymap") %>% clearGroup("overlays")
+    event <- input$facilitymap_marker_mouseover
+    if (is.null(event))
+      return()
+    isolate({
+      leafletProxy("facilitymap") %>% addCircles(lng=event$lng,lat=event$lat-0.0007, radius=70, layerId = event$id,
+                                                 fillColor="red", color="red", group="overlays")
+    })
+  })
+  
+  observe({
+    leafletProxy("parkingmap") %>% clearGroup("overlays")
+    event <- input$parkingmap_marker_mouseover
+    if (is.null(event))
+      return()
+    isolate({
+      leafletProxy("parkingmap") %>% addCircles(lng=event$lng,lat=event$lat-0.0005, radius=80, layerId = event$id,
+                                                fillColor="blue", color="blue", group="overlays")
+    })
+  })
+  
+  observe({
+    event <- input$outputtable2_rows_selected
+    if (is.null(event))
+      return()
+    flon <- values$facilitytable[input$outputtable2_rows_selected, 4]
+    flat <- values$facilitytable[input$outputtable2_rows_selected, 3]
+    leafletProxy("facilitymap") %>% clearGroup("overlays")
+    isolate({
+      leafletProxy("facilitymap") %>% addCircles(lng=flon,lat=flat-0.0007, radius=70,
+                                                 fillColor="red", color="red", group="overlays")
+    })
+  })
+  
+  observe({
+    event <- input$outputtable_rows_selected
+    if (is.null(event))
+      return()
+    flon <- values$parkingtable[input$outputtable_rows_selected,"Lon"] 
+    flat <- values$parkingtable[input$outputtable_rows_selected,"Lat"]
+    leafletProxy("parkingmap") %>% clearGroup("overlays")
+    isolate({
+      leafletProxy("parkingmap") %>% addCircles(lng=flon,lat=flat-0.0005, radius=80,
+                                                fillColor="blue", color="blue", group="overlays")
+    })
   })
   
   ### Other necessary functions
