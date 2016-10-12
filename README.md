@@ -24,23 +24,7 @@ The **learning goals** for this project is
 - systems development/design life cycle
 - shiny app/shiny server
 	
-**Contribution statement - Yaqing's version**: ([default](doc/a_note_on_contributions.md)) 
-- Data Collection: Kyongmook(90%), Yaqing (10%)
-- Data Cleaning/Processing: Kyongmook (80%), Zichen(10%), Yaqing (10%)
-- Shiny UI: Yaqing
-- Shiny Server: Yaqing
-
-**Contribution statement - Kyongmook's version**: ([default](doc/a_note_on_contributions.md)) 
-- Data Collection: Kyongmook(90%), Yaqing (10%)
-- Data Cleaning/Processing: Kyongmook (80%), Zichen(10%), Yaqing (10%)
-- Shiny UI: Yaqing
-- Shiny Server: Yaqing
-
-**Contribution statement - John's version**: ([default](doc/a_note_on_contributions.md)) 
-- Data Collection: Kyongmook(80%), Zichen(10%), Yaqing (10%)
-- Data Cleaning/Processing: Zichen(50%), Kyongmook (40%), Yaqing (10%)
-- Shiny UI: Yaqing
-- Shiny Server: Yaqing(80%), Zichen(20%)
+**Contribution statement - Available in Piazza group post
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
