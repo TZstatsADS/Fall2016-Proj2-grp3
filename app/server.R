@@ -59,17 +59,17 @@ shinyServer(function(input, output, session) {
   
   ### Customize marker icons
   greenparkingLeafIcon <- makeIcon(
-    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_green.png",
+    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/doc/parking_icon_green.png",
     iconWidth = 30
   )
   
   redparkingLeafIcon <- makeIcon(
-    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_red.png",
+    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/doc/parking_icon_red.png",
     iconWidth = 30
   )
   
   yellowparkingLeafIcon <- makeIcon(
-    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/lib/parking_icon_yellow.png",
+    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/doc/parking_icon_yellow.png",
     iconWidth = 30
   )
   
