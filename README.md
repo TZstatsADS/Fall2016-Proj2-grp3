@@ -1,7 +1,7 @@
 # Project: Open Data NYC - an RShiny app development project
 ### [Project Description](doc/project2_desc.md)
 
-### [Our App](https://yaqing-xie.shinyapps.io/parking_aide/)
+### [Our App](https://yaqing-xie.shinyapps.io/fall2016-proj2-grp3/)
 
 Term: Fall 2016
 
