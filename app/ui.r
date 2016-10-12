@@ -68,8 +68,8 @@ shinyUI(dashboardPage(
   dashboardBody(
     tabItems(tabItem(tabName = "parktab",
                      h2(leafletOutput("parkingmap"),
-                        div(DT::dataTableOutput("outputtable"), style = "font-size:50%"),
-                        div(DT::dataTableOutput("outputtable1"), style = "font-size:50%"))),
+                        uiOutput("table"),
+                        uiOutput("table1"))),
              tabItem(tabName = "facilitiestab",
                      h2(leafletOutput("facilitymap"),div(DT::dataTableOutput("outputtable2"), style = "font-size:50%"))
              )         

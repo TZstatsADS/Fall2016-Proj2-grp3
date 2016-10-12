@@ -4,6 +4,10 @@ library(DT)
 library(leaflet)
 library(shinyjs)
 library(ggmap)
+library(rsconnect)
+
+### as.POSIXct thing
+### free -> paid crush
 
 shinyServer(function(input, output, session) {
   ### UI: define two maps ###
@@ -45,6 +49,18 @@ shinyServer(function(input, output, session) {
     sliderInput("pricerange", label="willing to pay ($/hr):", min=0, max=50, value=c(0,50), step = 0.1)
   })
   
+  output$table <- renderUI({
+    if(input$price=="Paid")
+      return()
+    div(DT::dataTableOutput("outputtable"), style = "font-size:50%")
+  })
+  
+  output$table1 <- renderUI({
+    if(input$price=="Free")
+      return()
+    div(DT::dataTableOutput("outputtable1"), style = "font-size:50%")
+  })
+  
   ### UI: provide hour range based on date input
   output$hourrange <- renderUI({
     sliderInput("hourrange", label = "Hour range",
@@ -59,17 +75,17 @@ shinyServer(function(input, output, session) {
   
   ### Customize marker icons
   greenparkingLeafIcon <- makeIcon(
-    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/doc/parking_icon_green.png",
+    iconUrl = "doc/parking_icon_green.png",
     iconWidth = 30
   )
   
   redparkingLeafIcon <- makeIcon(
-    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/doc/parking_icon_red.png",
+    iconUrl = "doc/parking_icon_red.png",
     iconWidth = 30
   )
   
   yellowparkingLeafIcon <- makeIcon(
-    iconUrl = "/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/doc/parking_icon_yellow.png",
+    iconUrl = "doc/parking_icon_yellow.png",
     iconWidth = 30
   )
   
@@ -117,13 +133,15 @@ shinyServer(function(input, output, session) {
                                                    "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
     
     duration <- difftime(endtime, starttime, units="hours")
-    leafletProxy('parkingmap') %>% clearMarkers()
-    values$parkingtable = NULL
-    values$parkingtable1 = NULL
-    parkingviolation <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/parking_violation.csv")
-    crimerate <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Crime_Rate/Felony.csv")
-    if(input$price == 'Free'){
-      parkingspots <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Free_Parking_Spots/Sample_new.csv")
+    address1 <- revgeocode(c(clng1,clat1))
+    leafletProxy('parkingmap') %>% clearMarkers() %>% clearShapes() %>%
+      addCircles(lng=clng1, lat=clat1, group='circles',
+                 weight=1, radius=50, color='black', fillColor='orange', 
+                 popup=address1, fillOpacity=0.5, opacity=1)
+    parkingviolation <- read.csv("data/parking_violation.csv")
+    crimerate <- read.csv("data/Crime_Rate/Felony.csv")
+    if(input$price == 'Free'){ 
+      parkingspots <- read.csv("data/Free_Parking_Spots/Sample_new.csv")
       parkingspots <- parkingspots[parkingspots$Duration >= duration, ]
       
       parkingspots <- parkingspots[abs(parkingspots$Lat - clat1) <= 1, ]
@@ -142,9 +160,11 @@ shinyServer(function(input, output, session) {
           if((startday %in% dayrangeorder) & (endday %in% dayrangeorder)) {
             if(match(startday,dayrangeorder) <= match(endday,dayrangeorder)){
               flag <- TRUE
-              if(startday == dayrangeorder[1] & starttime < parkingspots[i,'TS']){
+              if(startday == dayrangeorder[1] & 
+                 starttime < as.POSIXct(parkingspots[i,'TS'], format="%H:%M")){
                 flag <- FALSE}
-              if(endday == dayrangeorder[length(dayrangeorder)] & endtime > parkingspots[i, 'TE']) {
+              if(endday == dayrangeorder[length(dayrangeorder)] & 
+                 endtime > as.POSIXct(parkingspots[i,'TE'], format="%H:%M")) {
                 flag <- FALSE}
             }
           }
@@ -189,7 +209,7 @@ shinyServer(function(input, output, session) {
     else if(input$price == 'Paid'){
       maxprice <- input$pricerange[2]
       minprice <- input$pricerange[1]
-      parkinglots <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/paid_parking.csv")
+      parkinglots <- read.csv("data/paid_parking.csv")
       parkinglots <- parkinglots[parkinglots$Rate <= maxprice & parkinglots$Rate >= minprice, ]
       
       if(nrow(parkinglots) > 0){
@@ -246,7 +266,7 @@ shinyServer(function(input, output, session) {
     if(exists('facilitydata_filtered')) {
       facilitydata_filtered <- facilitydata_filtered[0,]}
     if(facilitychosen == "Gas Station") {
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Facilities/Gas Station in Manhattan.csv")
+      facilitydata <- read.csv("data/Facilities/Gas Station in Manhattan.csv")
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata)) {
         temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
@@ -263,7 +283,7 @@ shinyServer(function(input, output, session) {
                      popup = paste(facilitydata_filtered$Name, facilitydata_filtered$Address, sep=": "),
                      layerId = ~ Address)}}
     if(facilitychosen == "Garage") {
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Facilities/garage_location.csv")
+      facilitydata <- read.csv("data/Facilities/garage_location.csv")
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata)) {
         temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
@@ -281,7 +301,7 @@ shinyServer(function(input, output, session) {
                                    facilitydata_filtered$Address, sep=": "),
                      layerId = ~ Address)}}
     if(facilitychosen == "Restroom") {
-      facilitydata <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Facilities/publictoilet(name,address,laditude, longditude).csv")
+      facilitydata <- read.csv("data/Facilities/publictoilet(name,address,laditude, longditude).csv")
       facilitydata_filtered <- facilitydata[0,]
       for (i in 1:nrow(facilitydata)) {
         temp_distance <- distance_calculation(facilitydata[i,3], facilitydata[i,4], clat2, clng2)
@@ -343,9 +363,15 @@ shinyServer(function(input, output, session) {
     event <- input$outputtable_rows_selected
     if (is.null(event))
       return()
+    if (input$price == "Paid")
+      return()
     flon <- values$parkingtable[input$outputtable_rows_selected,"Lon"] 
     flat <- values$parkingtable[input$outputtable_rows_selected,"Lat"]
     leafletProxy("parkingmap") %>% clearGroup("overlays")
+    if (is.null(flon))
+      return()
+    if (is.null(flat))
+      return()
     isolate({
       leafletProxy("parkingmap") %>% addCircles(lng=flon,lat=flat-0.0005, radius=80,
                                                 fillColor="blue", color="blue", group="overlays")
@@ -356,9 +382,15 @@ shinyServer(function(input, output, session) {
     event <- input$outputtable1_rows_selected
     if (is.null(event))
       return()
+    if (input$price == "Free")
+      return()
     flon <- values$parkingtable1[input$outputtable1_rows_selected,"Longitude"] 
     flat <- values$parkingtable1[input$outputtable1_rows_selected,"Latitude"]
     leafletProxy("parkingmap") %>% clearGroup("overlays")
+    if (is.null(flon))
+      return()
+    if (is.null(flat))
+      return()
     isolate({
       leafletProxy("parkingmap") %>% addCircles(lng=flon,lat=flat-0.0005, radius=80,
                                                 fillColor="blue", color="blue", group="overlays")
