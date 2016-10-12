@@ -8,7 +8,7 @@ Term: Fall 2016
 + Team members
 	+ Yaqing Xie
 	+ Kyongmook Lim
-	+ Zichen Zhu
+	+ Zichen Wu
 	
 + Project summary: The project aims to make car parking in NY easier. Our main function reads user's input such as the current location and the maximum distance s/he would love to drive to, ask if s/he prefers free or paid parking, get the user's willingness to pay and the time range of his/her parking demand, and then make visualized recommendations based on neighboorhood crime rate and parking violation rate. To implement this feature, we spent a lot of time converting road signs such as "No Parking Monday 7am to 11am" to free parking lot spots. We also provide features to allow users find out nearby gas stations/garage for car fixing/restrooms.
 
