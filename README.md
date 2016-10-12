@@ -24,8 +24,8 @@ The **learning goals** for this project is
 - systems development/design life cycle
 - shiny app/shiny server
 	
-**Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
-- Data Collection: Kyongmook(80%), Zichen(10%), Yaqing (10%)
+**Contribution statement - Yaqing's version**: ([default](doc/a_note_on_contributions.md)) 
+- Data Collection: Kyongmook(90%), Yaqing (10%)
 - Data Cleaning/Processing: Kyongmook (80%), Zichen(10%), Yaqing (10%)
 - Shiny UI: Yaqing
 - Shiny Server: Yaqing
