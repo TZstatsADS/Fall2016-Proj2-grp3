@@ -24,7 +24,7 @@ The **learning goals** for this project is
 - systems development/design life cycle
 - shiny app/shiny server
 	
-**Contribution statement - Available in Piazza group post
+**Contribution statement - Available in Piazza group post**
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
