@@ -30,6 +30,17 @@ The **learning goals** for this project is
 - Shiny UI: Yaqing
 - Shiny Server: Yaqing
 
+**Contribution statement - Kyongmook's version**: ([default](doc/a_note_on_contributions.md)) 
+- Data Collection: 
+- Data Cleaning/Processing: 
+- Shiny UI: 
+- Shiny Server: 
+
+**Contribution statement - John's version**: ([default](doc/a_note_on_contributions.md)) 
+- Data Collection: Kyongmook(80%), Zichen(10%), Yaqing (10%)
+- Data Cleaning/Processing: Zichen(50%), Kyongmook (40%), Yaqing (10%)
+- Shiny UI: Yaqing
+- Shiny Server: Yaqing(80%), Zichen(20%)
 
 Following [suggestions](http://nicercode.github.io/blog/2013-04-05-projects/) by [RICH FITZJOHN](http://nicercode.github.io/about/#Team) (@richfitz). This folder is orgarnized as follows.
 
