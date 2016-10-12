@@ -25,9 +25,9 @@ The **learning goals** for this project is
 - shiny app/shiny server
 	
 **Contribution statement**: ([default](doc/a_note_on_contributions.md)) 
-- Data Collection: Kyongmook (90%), Yaqing (10%)
-- Data Cleaning/Processing: Kyongmook (80%), Yaqing (10%), Zichen (10%)
-- Shiny UI: Yaqing
+- Data Collection: Kyongmook(80%), Zichen(10%),Yaqing (10%)
+- Data Cleaning/Processing: Zichen(50%),Kyongmook (40%), Yaqing (10%)
+- Shiny UI: Yaqing(80%), Zichen(20%)
 - Shiny Server: Yaqing
 
 
