@@ -1,4 +1,4 @@
-Name,address,Rate(hourly),Latitude,Longitude
+Name,Address,Rate,Latitude,Longitude
 SRM,3936 10th Ave(at Sherman Ave),5,40.866193,-73.918
 EDISON parkfast,3976 10th Ave(bet. 213-214st),8,40.712784,-74.005941
 Sherman Parking,210 Sherman Ave,5,40.86551,-73.920836
@@ -15,7 +15,6 @@ PV Parking Corp,554W 174st,7,40.844279,-73.936364
 SP Plus The Barrington Travel Group,458 W 165 St,10,40.837469,-73.937374
 J&B Parking Lot,477 W 165 St,10,40.837835,-73.93762
 UNI Facility Corp.,4070 Broadway,11,40.843565,-73.938702
-Select ap 127th management LLC,311 W 127th St,n/a,40.811989,-73.950879
 Park 115 LLC,313W 115th St,6,40.796186,-73.937388
 iPark Manhattan Ave Garage,314 W 120th St,12,40.807195,-73.954607
 Park 117 LLC,276 W 118th St,12,40.805487,-73.953863
@@ -53,7 +52,6 @@ M P G MP 99,1559 Lexington Ave,13,40.788021,-73.948996
 ICON Kensington Enterprises,50W 97st,19,40.792829,-73.965881
 ICON Columbus 95 Parking,105 S 95 th st,20,40.792556,-73.968397
 Little Man LM Susie Parking,214 W 95th st,19,40.793517,-73.971794
-SELECT AP Riverside Management LLC,321W 94st,n/a,40.794735,-73.975504
 QUIK PARK 50/70 West 93rd Street,85W 92st,20,40.784203,-73.954886
 Ipark W 90 Garage,101W 90st,18,40.789298,-73.970535
 Rapid Park Wheat Garage,115W 89st,18,40.712784,-74.005941
@@ -63,7 +61,6 @@ RAPID PARK Rockmill Garage Corp,340 E 94 st,12,40.781985,-73.946211
 GGMC Carnegie Car Park,40-60E 94st,19,40.785561,-73.954699
 Glenwood Brittany Realty LLC,441 E 92st,11,40.780059,-73.945604
 David Garage-Eli's Leasing Inc,422E 91st,11,40.901032,-73.834213
-SELECT West 88th Garage LLC,207W 88st,n/a,40.712784,-74.005941
 Garsch Garage Corp,175w 87st,17,40.788364,-73.974078
 ICON Active Parking,280W 87st,32,40.787084,-73.97091
 SP Plus Parking,147W 83st,22,40.778988,-73.960956

@@ -67,7 +67,9 @@ ui <- dashboardPage(
   
   dashboardBody(
               tabItems(tabItem(tabName = "parktab",
-                       h2(leafletOutput("parkingmap"),div(DT::dataTableOutput("outputtable"), style = "font-size:50%"))),
+                       h2(leafletOutput("parkingmap"),
+                          div(DT::dataTableOutput("outputtable"), style = "font-size:50%"),
+                          div(DT::dataTableOutput("outputtable1"), style = "font-size:50%"))),
                        tabItem(tabName = "facilitiestab",
                        h2(leafletOutput("facilitymap"),div(DT::dataTableOutput("outputtable2"), style = "font-size:50%"))
                        )         
@@ -161,10 +163,12 @@ server <- function(input, output, session) {
   )
   
   ### Define reactive tables
-  values <- reactiveValues(facilitytable = NULL, parkingtable = NULL)
+  values <- reactiveValues(facilitytable = NULL, parkingtable = NULL, parkingtable1 = NULL)
   output$outputtable2 <- DT::renderDataTable(values$facilitytable[,c(1,2,5)], 
                                              rownames=FALSE)
   output$outputtable <- DT::renderDataTable(values$parkingtable[,c(1,4:10)], 
+                                            rownames=FALSE)
+  output$outputtable1 <- DT::renderDataTable(values$parkingtable1[,c(1,2,6,7,8)], 
                                             rownames=FALSE)
   
   
@@ -179,19 +183,21 @@ server <- function(input, output, session) {
     maxdist <- input$distance
     starttime <- input$hourrange[1]
     endtime <- input$hourrange[2]
+    startday <- weekdays(starttime)
+    startday <- as.integer(factor(startday, levels = c("Monday", "Tuesday", "Wednesday", 
+                                                       "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
+    endday <- weekdays(endtime)
+    endday <- as.integer(factor(endday, levels = c("Monday", "Tuesday", "Wednesday", 
+                                                   "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
+    
+    duration <- difftime(endtime, starttime, units="hours")
     leafletProxy('parkingmap') %>% clearMarkers()
+    values$parkingtable = NULL
+    values$parkingtable1 = NULL
     parkingviolation <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/parking_violation.csv")
     crimerate <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Crime_Rate/Felony.csv")
     if(input$price == 'Free'){
       parkingspots <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/Free_Parking_Spots/Sample_new.csv")
-      startday <- weekdays(starttime)
-      startday <- as.integer(factor(startday, levels = c("Monday", "Tuesday", "Wednesday", 
-                                              "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
-      endday <- weekdays(endtime)
-      endday <- as.integer(factor(endday, levels = c("Monday", "Tuesday", "Wednesday", 
-                                                         "Thursday", "Friday", "Saturday", "Sunday"), ordered = TRUE))
-      
-      duration <- difftime(endtime, starttime, units="hours")
       parkingspots <- parkingspots[parkingspots$Duration >= duration, ]
       
       parkingspots <- parkingspots[abs(parkingspots$Lat - clat1) <= 1, ]
@@ -220,10 +226,10 @@ server <- function(input, output, session) {
             temp_distance <- distance_calculation(parkingspots[i,"Lat"], parkingspots[i,"Lon"], clat1, clng1)
             if(temp_distance <= maxdist){
               parkingspots_temp[nrow(parkingspots_temp)+1, seq(8)] <- parkingspots[i,]
-              unsafeindex <- nrow(parkingviolation[abs(parkingviolation$Lon - parkingspots[i,"Lon"]) <= 0.3 & 
-                                                     abs(parkingviolation$Lat - parkingspots[i, "Lat"]) <= 0.3, ]) +
-                nrow(crimerate[abs(crime$Longitude - parkingspots[i,"Lon"]) <= 0.3 & 
-                                        abs(crime$Latitude - parkingspots[i,"Lat"]) <= 0.15, ])
+              unsafeindex <- nrow(parkingviolation[abs(parkingviolation$Lon - parkingspots[i,"Lon"]) <= 0.01 & 
+                                                     abs(parkingviolation$Lat - parkingspots[i, "Lat"]) <= 0.01, ]) +
+                nrow(crimerate[abs(crime$Longitude - parkingspots[i,"Lon"]) <= 0.01 & 
+                                        abs(crime$Latitude - parkingspots[i,"Lat"]) <= 0.01, ])
               parkingspots_temp[nrow(parkingspots_temp), "Unsafe"] <- unsafeindex
               parkingspots_temp[nrow(parkingspots_temp), "Distance"] <- temp_distance
             }
@@ -236,27 +242,70 @@ server <- function(input, output, session) {
       if(nrow(parkingspots) > 0) {
         parkingspots <- parkingspots[order(parkingspots$Distance, parkingspots$Unsafe),]
         leafletProxy('parkingmap') %>%
-        addMarkers(data = parkingspots[parkingspots$Unsafe <= 400, ], 
+        addMarkers(data = parkingspots[parkingspots$Unsafe <= 18, ], 
                    lng = ~ Lon, lat = ~ Lat,  icon=greenparkingLeafIcon,
-                   popup = paste(parkingspots$ID, 
+                   popup = paste(parkingspots$Address, 
                                  parkingspots$Unsafe, sep=", dangerous index: "),
-                   layerId = ~ ID) %>%
-        addMarkers(data = parkingspots[(parkingspots$Unsafe <= 800) & (parkingspots$Unsafe > 400), ], 
+                   layerId = ~ Address) %>%
+        addMarkers(data = parkingspots[(parkingspots$Unsafe <= 30) & (parkingspots$Unsafe > 18), ], 
                    lng = ~ Lon, lat = ~ Lat,  icon=yellowparkingLeafIcon,
-                   popup = paste(parkingspots$ID, 
+                   popup = paste(parkingspots$Address, 
                                  parkingspots$Unsafe, sep=", dangerous index: "),
-                   layerId = ~ ID) %>%
-        addMarkers(data = parkingspots[parkingspots$Unsafe > 800, ], 
+                   layerId = ~ Address) %>%
+        addMarkers(data = parkingspots[parkingspots$Unsafe > 30, ], 
                    lng = ~ Lon, lat = ~ Lat,  icon=redparkingLeafIcon,
-                   popup = paste(parkingspots$ID, 
+                   popup = paste(parkingspots$Address, 
                                  parkingspots$Unsafe, sep=", dangerous index: "),
-                   layerId = ~ ID) }
+                   layerId = ~ Address) }
               
       values$parkingtable <- parkingspots
     }
     else if(input$price == 'Paid'){
-      maxprice <- input$pricerange
+      maxprice <- input$pricerange[2]
+      minprice <- input$pricerange[1]
+      parkinglots <- read.csv("/Users/YaqingXie/Desktop/3-Applied Data Science/Fall2016-Proj2-grp3/data/paid_parking.csv")
+      parkinglots <- parkinglots[parkinglots$Rate <= maxprice & parkinglots$Rate >= minprice, ]
       
+      if(nrow(parkinglots) > 0){
+        parkinglots_temp <- parkinglots[0,]
+        for (i in 1:nrow(parkinglots)){
+          temp_distance <- distance_calculation(parkinglots[i,4], parkinglots[i,5], clat1, clng1)
+          print(temp_distance)
+          if(temp_distance <= maxdist){
+            print(i)
+            parkinglots_temp[nrow(parkinglots_temp)+1, seq(5)] <- parkinglots[i,]
+            unsafeindex <- nrow(parkingviolation[abs(parkingviolation$Lon - parkinglots[i,5]) <= 0.01 & 
+                                                   abs(parkingviolation$Lat - parkinglots[i, 4]) <= 0.01, ]) +
+              nrow(crimerate[abs(crime$Longitude - parkinglots[i,5]) <= 0.01 & 
+                               abs(crime$Latitude - parkinglots[i,4]) <= 0.01, ])
+            parkinglots_temp[nrow(parkinglots_temp), "Unsafe"] <- unsafeindex
+            parkinglots_temp[nrow(parkinglots_temp), "Distance"] <- temp_distance
+            parkinglots_temp[nrow(parkinglots_temp), "Total_Fee"] <- duration * parkinglots_temp[nrow(parkinglots_temp), "Rate"]
+          }
+        }
+      }
+      
+      if(nrow(parkinglots_temp) >0 ){
+        parkinglots_temp <- parkinglots_temp[order(parkinglots_temp$Distance, parkinglots_temp$Unsafe),]
+        leafletProxy('parkingmap') %>%
+          addMarkers(data = parkinglots_temp[parkinglots_temp$Unsafe <= 18, ], 
+                     lng = ~ Longitude, lat = ~ Latitude,  icon=greenparkingLeafIcon,
+                     popup = paste(parkinglots$Address, 
+                                   parkinglots$Unsafe, sep=", dangerous index: "),
+                     layerId = ~ Address) %>%
+          addMarkers(data = parkinglots_temp[(parkinglots_temp$Unsafe <= 30) & (parkinglots_temp$Unsafe > 18), ], 
+                     lng = ~ Longitude, lat = ~ Latitude,  icon=yellowparkingLeafIcon,
+                     popup = paste(parkinglots_temp$Address, 
+                                   parkinglots_temp$Unsafe, sep=", dangerous index: "),
+                     layerId = ~ Address) %>%
+          addMarkers(data = parkinglots_temp[parkinglots_temp$Unsafe > 30, ], 
+                     lng = ~ Longitude, lat = ~ Latitude,  icon=redparkingLeafIcon,
+                     popup = paste(parkinglots_temp$Address, 
+                                   parkinglots_temp$Unsafe, sep=", dangerous index: "),
+                     layerId = ~ Address)
+        
+        values$parkingtable1 <- parkinglots_temp
+      }
     }
   })
   
@@ -372,6 +421,19 @@ server <- function(input, output, session) {
       return()
     flon <- values$parkingtable[input$outputtable_rows_selected,"Lon"] 
     flat <- values$parkingtable[input$outputtable_rows_selected,"Lat"]
+    leafletProxy("parkingmap") %>% clearGroup("overlays")
+    isolate({
+      leafletProxy("parkingmap") %>% addCircles(lng=flon,lat=flat-0.0005, radius=80,
+                                                fillColor="blue", color="blue", group="overlays")
+    })
+  })
+  
+  observe({
+    event <- input$outputtable1_rows_selected
+    if (is.null(event))
+      return()
+    flon <- values$parkingtable1[input$outputtable1_rows_selected,"Longitude"] 
+    flat <- values$parkingtable1[input$outputtable1_rows_selected,"Latitude"]
     leafletProxy("parkingmap") %>% clearGroup("overlays")
     isolate({
       leafletProxy("parkingmap") %>% addCircles(lng=flon,lat=flat-0.0005, radius=80,
